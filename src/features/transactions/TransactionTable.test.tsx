@@ -1,0 +1,147 @@
+import { screen, waitFor } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
+import { afterEach, describe, expect, it, vi } from 'vitest';
+import { jsonResponse, renderWithClient } from '@/test/utils';
+import { TransactionTable } from './TransactionTable';
+
+const wallets = { data: [{ id: 'w1', name: 'BCA' }, { id: 'w2', name: 'Tunai' }] };
+const cats = { data: [{ id: 'c1', parent_id: null, name: 'Makanan', type: 'expense', icon: null, color: null }] };
+const tx = (over = {}) => ({
+  id: 't1', wallet_id: 'w1', category_id: 'c1', type: 'expense', amount: 25000,
+  occurred_at: '2026-11-07T16:30:00Z', note: 'kopi susu', transfer_group_id: null, ...over,
+});
+
+/** fetch yang menjawab per URL, dan mencatat panggilannya. */
+function route(handlers: Record<string, (init?: RequestInit) => Response>) {
+  const mock = vi.fn(async (url: string, init?: RequestInit) => {
+    const key = Object.keys(handlers).find((k) => url.startsWith(k));
+    if (!key) throw new Error(`unexpected fetch ${url}`);
+    return handlers[key](init);
+  });
+  vi.stubGlobal('fetch', mock);
+  return mock;
+}
+const base = {
+  '/api/proxy/wallets': () => jsonResponse(200, wallets),
+  '/api/proxy/categories': () => jsonResponse(200, cats),
+};
+
+afterEach(() => vi.unstubAllGlobals());
+
+describe('TransactionTable', () => {
+  it('shows a skeleton while loading', () => {
+    vi.stubGlobal('fetch', vi.fn(() => new Promise(() => {})));
+    renderWithClient(<TransactionTable filters={{}} onEdit={vi.fn()} />);
+
+    expect(screen.getByRole('status', { name: 'Memuat transaksi' })).toBeInTheDocument();
+  });
+
+  it('shows rows with Jakarta dates, signed amounts, category and wallet names', async () => {
+    route({
+      ...base,
+      '/api/proxy/transactions': () =>
+        jsonResponse(200, { data: [tx(), tx({ id: 't2', type: 'income', category_id: null, amount: 5000000, note: 'gaji', occurred_at: '2026-11-30T20:00:00Z' })], meta: { next_cursor: null } }),
+    });
+    renderWithClient(<TransactionTable filters={{}} onEdit={vi.fn()} />);
+
+    expect(await screen.findByText('kopi susu')).toBeInTheDocument();
+    expect(screen.getByText('7 Nov 2026')).toBeInTheDocument();
+    expect(screen.getByText('1 Des 2026')).toBeInTheDocument(); // 20:00 UTC = 03:00 WIB hari berikutnya
+    expect(screen.getByText('-Rp 25.000')).toBeInTheDocument();
+    expect(screen.getByText('+Rp 5.000.000')).toBeInTheDocument();
+    expect(screen.getAllByText('Makanan').length).toBeGreaterThan(0);
+  });
+
+  it('shows a friendly empty state', async () => {
+    route({ ...base, '/api/proxy/transactions': () => jsonResponse(200, { data: [], meta: { next_cursor: null } }) });
+    renderWithClient(<TransactionTable filters={{}} onEdit={vi.fn()} />);
+
+    expect(await screen.findByText('Belum ada transaksi')).toBeInTheDocument();
+  });
+
+  it('sends the filters as query params', async () => {
+    const mock = route({ ...base, '/api/proxy/transactions': () => jsonResponse(200, { data: [], meta: { next_cursor: null } }) });
+    renderWithClient(<TransactionTable filters={{ wallet_id: 'w1', type: 'income', from: '2026-11-01', q: 'gaji' }} onEdit={vi.fn()} />);
+
+    await screen.findByText('Belum ada transaksi');
+    const url = mock.mock.calls.map(([u]) => String(u)).find((u) => u.startsWith('/api/proxy/transactions'))!;
+    const params = new URL(url, 'http://x').searchParams;
+    expect(Object.fromEntries(params)).toEqual({ wallet_id: 'w1', type: 'income', from: '2026-11-01', q: 'gaji' });
+  });
+
+  it('loads the next page with the cursor', async () => {
+    const user = userEvent.setup();
+    let page = 0;
+    const mock = route({
+      ...base,
+      '/api/proxy/transactions': () =>
+        jsonResponse(200, page++ === 0 ? { data: [tx({ note: 'pertama' })], meta: { next_cursor: 'CUR1' } } : { data: [tx({ id: 't9', note: 'kedua' })], meta: { next_cursor: null } }),
+    });
+    renderWithClient(<TransactionTable filters={{}} onEdit={vi.fn()} />);
+
+    await screen.findByText('pertama');
+    await user.click(screen.getByRole('button', { name: 'Muat lagi' }));
+
+    expect(await screen.findByText('kedua')).toBeInTheDocument();
+    expect(screen.getByText('pertama')).toBeInTheDocument();
+    expect(mock.mock.calls.some(([u]) => String(u).includes('cursor=CUR1'))).toBe(true);
+    expect(screen.queryByRole('button', { name: 'Muat lagi' })).not.toBeInTheDocument();
+  });
+
+  it('labels transfer rows and deletes them through /transfers, not /transactions', async () => {
+    const user = userEvent.setup();
+    const group = '11111111-1111-4111-8111-111111111111';
+    const mock = route({
+      ...base,
+      '/api/proxy/transactions': () =>
+        jsonResponse(200, { data: [tx({ id: 't3', type: 'transfer_out', category_id: null, note: null, transfer_group_id: group })], meta: { next_cursor: null } }),
+      [`/api/proxy/transfers/${group}`]: () => new Response(null, { status: 204 }),
+    });
+    vi.stubGlobal('confirm', () => true);
+    renderWithClient(<TransactionTable filters={{}} onEdit={vi.fn()} />);
+
+    expect(await screen.findByText('Transfer keluar')).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /^Ubah/ })).not.toBeInTheDocument();
+
+    await user.click(screen.getByRole('button', { name: /^Hapus/ }));
+
+    await waitFor(() => expect(mock.mock.calls.some(([u, i]) => u === `/api/proxy/transfers/${group}` && (i as RequestInit).method === 'DELETE')).toBe(true));
+  });
+
+  it('calls onEdit for a normal row and deletes through /transactions after confirmation', async () => {
+    const user = userEvent.setup();
+    const onEdit = vi.fn();
+    const mock = route({
+      ...base,
+      '/api/proxy/transactions/t1': () => new Response(null, { status: 204 }),
+      '/api/proxy/transactions': () => jsonResponse(200, { data: [tx()], meta: { next_cursor: null } }),
+    });
+    renderWithClient(<TransactionTable filters={{}} onEdit={onEdit} />);
+
+    await user.click(await screen.findByRole('button', { name: /^Ubah/ }));
+    expect(onEdit).toHaveBeenCalledWith(expect.objectContaining({ id: 't1' }));
+
+    vi.stubGlobal('confirm', () => false);
+    await user.click(screen.getByRole('button', { name: /^Hapus/ }));
+    expect(mock.mock.calls.some(([, i]) => (i as RequestInit)?.method === 'DELETE')).toBe(false);
+
+    vi.stubGlobal('confirm', () => true);
+    await user.click(screen.getByRole('button', { name: /^Hapus/ }));
+    await waitFor(() => expect(mock.mock.calls.some(([u, i]) => u === '/api/proxy/transactions/t1' && (i as RequestInit).method === 'DELETE')).toBe(true));
+  });
+
+  it('shows the API reason when deleting fails', async () => {
+    const user = userEvent.setup();
+    route({
+      ...base,
+      '/api/proxy/transactions/t1': () => jsonResponse(422, { message: 'x', errors: { wallet_id: ['Dompet sudah diarsipkan.'] } }),
+      '/api/proxy/transactions': () => jsonResponse(200, { data: [tx()], meta: { next_cursor: null } }),
+    });
+    vi.stubGlobal('confirm', () => true);
+    renderWithClient(<TransactionTable filters={{}} onEdit={vi.fn()} />);
+
+    await user.click(await screen.findByRole('button', { name: /^Hapus/ }));
+
+    expect(await screen.findByRole('alert')).toHaveTextContent('Dompet sudah diarsipkan.');
+  });
+});

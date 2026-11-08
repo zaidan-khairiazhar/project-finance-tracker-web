@@ -1,21 +1,25 @@
 "use client";
 
 import { useRouter } from "next/navigation";
+import { useQueryClient } from "@tanstack/react-query";
 import { sessionRequest } from "@/lib/api";
+import { Button } from "./ui/button";
 
 export function LogoutButton() {
   const router = useRouter();
+  const queryClient = useQueryClient();
 
   return (
-    <button
-      type="button"
-      className="rounded-md border border-border px-3 py-1.5 text-sm hover:bg-muted"
+    <Button
+      variant="outline"
+      size="sm"
       onClick={async () => {
         await sessionRequest("", { method: "DELETE" }).catch(() => undefined);
+        queryClient.clear(); // buang data user ini dari cache
         router.replace("/login");
       }}
     >
       Keluar
-    </button>
+    </Button>
   );
 }

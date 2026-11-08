@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { currentMonth, formatDate, formatRupiah, parseRupiah } from './format';
+import { currentMonth, formatDate, formatRupiah, fromInputValue, nowForInput, parseRupiah, toInputValue } from './format';
 
 describe('format', () => {
   it('formats rupiah with id-ID grouping', () => {
@@ -33,5 +33,25 @@ describe('format', () => {
   it('returns the Jakarta month', () => {
     expect(currentMonth(new Date('2026-11-30T20:00:00Z'))).toBe('2026-12');
     expect(currentMonth(new Date('2026-11-30T16:59:00Z'))).toBe('2026-11');
+  });
+});
+
+describe('datetime-local helpers (Asia/Jakarta)', () => {
+  it('shows a UTC instant as Jakarta wall-clock time', () => {
+    expect(toInputValue('2026-11-30T20:00:00Z')).toBe('2026-12-01T03:00');
+    expect(toInputValue('2026-11-07T16:30:00Z')).toBe('2026-11-07T23:30');
+  });
+
+  it('turns Jakarta wall-clock input into an ISO string with +07:00', () => {
+    expect(fromInputValue('2026-12-01T03:00')).toBe('2026-12-01T03:00:00+07:00');
+  });
+
+  it('round-trips through the same instant', () => {
+    const iso = '2026-11-07T16:30:00Z';
+    expect(new Date(fromInputValue(toInputValue(iso))).toISOString()).toBe('2026-11-07T16:30:00.000Z');
+  });
+
+  it('gives the current Jakarta time for the input default', () => {
+    expect(nowForInput(new Date('2026-11-30T20:00:00Z'))).toBe('2026-12-01T03:00');
   });
 });
