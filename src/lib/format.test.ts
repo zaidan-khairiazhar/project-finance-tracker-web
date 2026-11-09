@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { currentMonth, formatDate, formatRupiah, fromInputValue, nowForInput, parseRupiah, toInputValue } from './format';
+import { currentMonth, formatDate, formatRupiah, formatMonth, fromInputValue, nowForInput, parseRupiah, shiftMonth, toInputValue } from './format';
 
 describe('format', () => {
   it('formats rupiah with id-ID grouping', () => {
@@ -53,5 +53,20 @@ describe('datetime-local helpers (Asia/Jakarta)', () => {
 
   it('gives the current Jakarta time for the input default', () => {
     expect(nowForInput(new Date('2026-11-30T20:00:00Z'))).toBe('2026-12-01T03:00');
+  });
+});
+
+describe('month helpers', () => {
+  it('shifts months across year boundaries', () => {
+    expect(shiftMonth('2026-11', 1)).toBe('2026-12');
+    expect(shiftMonth('2026-12', 1)).toBe('2027-01');
+    expect(shiftMonth('2026-01', -1)).toBe('2025-12');
+    expect(shiftMonth('2026-03', -3)).toBe('2025-12');
+  });
+
+  it('formats a month in Indonesian', () => {
+    expect(formatMonth('2026-11')).toBe('November 2026');
+    expect(formatMonth('2026-12')).toBe('Desember 2026');
+    expect(formatMonth('2026-08')).toBe('Agustus 2026');
   });
 });

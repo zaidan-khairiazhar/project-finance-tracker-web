@@ -69,3 +69,16 @@ export function fromInputValue(local: string): string {
 export function nowForInput(now: Date = new Date()): string {
   return toInputValue(now.toISOString());
 }
+
+/** Geser bulan `YYYY-MM` sebanyak `delta` bulan (boleh negatif), melewati batas tahun. */
+export function shiftMonth(month: string, delta: number): string {
+  const [year, m] = month.split('-').map(Number);
+  const index = year * 12 + (m - 1) + delta;
+
+  return `${Math.floor(index / 12)}-${String((index % 12) + 1).padStart(2, '0')}`;
+}
+
+/** "2026-11" → "November 2026". */
+export function formatMonth(month: string): string {
+  return new Intl.DateTimeFormat('id-ID', { month: 'long', year: 'numeric', timeZone: 'UTC' }).format(new Date(`${month}-01T00:00:00Z`));
+}

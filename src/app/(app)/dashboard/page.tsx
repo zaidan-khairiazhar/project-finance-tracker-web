@@ -1,14 +1,20 @@
-import { LogoutButton } from "@/components/logout-button";
+import { Suspense } from "react";
+import { connection } from "next/server";
+import { Skeleton } from "@/components/ui/skeleton";
+import { DashboardView } from "@/features/dashboard/DashboardView";
+import { currentMonth } from "@/lib/format";
 
-// Sementara: halaman penampung. Dashboard sebenarnya dibuat di Task 11 dan 13.
+// Bulan berjalan dihitung per permintaan (connection() menandai render ini dinamis), bukan dibekukan saat build.
+async function Dashboard() {
+  await connection();
+  const month = currentMonth();
+  return <DashboardView initialMonth={month} currentMonth={month} />;
+}
+
 export default function DashboardPage() {
   return (
-    <main className="mx-auto flex w-full max-w-3xl flex-1 flex-col gap-4 px-4 py-10">
-      <h1 className="text-2xl font-semibold tracking-tight">Dashboard</h1>
-      <p className="text-muted-foreground">Kamu sudah masuk. Isi dashboard menyusul di task berikutnya.</p>
-      <div>
-        <LogoutButton />
-      </div>
-    </main>
+    <Suspense fallback={<Skeleton className="h-64" />}>
+      <Dashboard />
+    </Suspense>
   );
 }

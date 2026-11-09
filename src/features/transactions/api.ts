@@ -22,6 +22,7 @@ export type TransactionFilters = {
   from?: string;
   to?: string;
   q?: string;
+  per_page?: number;
 };
 
 type Page = { data: Transaction[]; meta: { next_cursor: string | null } };
@@ -29,7 +30,7 @@ type Page = { data: Transaction[]; meta: { next_cursor: string | null } };
 function toQuery(filters: TransactionFilters, cursor?: string): string {
   const params = new URLSearchParams();
   for (const [key, value] of Object.entries(filters)) {
-    if (value) params.set(key, value);
+    if (value) params.set(key, String(value));
   }
   if (cursor) params.set("cursor", cursor);
 
