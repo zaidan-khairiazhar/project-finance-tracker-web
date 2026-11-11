@@ -44,10 +44,12 @@ async function handler(request: Request, { params }: Context): Promise<NextRespo
     return new NextResponse(null, { status: upstream.status });
   }
 
-  const res = new NextResponse(await upstream.text(), {
-    status: upstream.status,
-    headers: { 'Content-Type': upstream.headers.get('content-type') ?? 'application/json' },
-  });
+  // Byte mentah (bukan text()) supaya BOM UTF-8 pada CSV tidak terbuang; Content-Disposition dibawa untuk nama berkas unduhan.
+  const responseHeaders: Record<string, string> = { 'Content-Type': upstream.headers.get('content-type') ?? 'application/json' };
+  const disposition = upstream.headers.get('content-disposition');
+  if (disposition) responseHeaders['Content-Disposition'] = disposition;
+
+  const res = new NextResponse(await upstream.arrayBuffer(), { status: upstream.status, headers: responseHeaders });
   if (upstream.status === 401) clearToken(res);
 
   return res;

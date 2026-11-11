@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { currentMonth, formatDate, formatRupiah, formatMonth, fromInputValue, nowForInput, parseRupiah, shiftMonth, toInputValue } from './format';
+import { currentMonth, formatDate, formatRupiah, formatMonth, fromInputValue, lastMonths, monthRange, nowForInput, parseRupiah, shiftMonth, toInputValue } from './format';
 
 describe('format', () => {
   it('formats rupiah with id-ID grouping', () => {
@@ -68,5 +68,32 @@ describe('month helpers', () => {
     expect(formatMonth('2026-11')).toBe('November 2026');
     expect(formatMonth('2026-12')).toBe('Desember 2026');
     expect(formatMonth('2026-08')).toBe('Agustus 2026');
+  });
+});
+
+describe('lastMonths', () => {
+  it('lists months ascending, ending at the current Jakarta month', () => {
+    expect(lastMonths(3, new Date('2026-11-09T10:00:00Z'))).toEqual(['2026-09', '2026-10', '2026-11']);
+  });
+
+  it('crosses the year boundary', () => {
+    expect(lastMonths(3, new Date('2026-01-15T10:00:00Z'))).toEqual(['2025-11', '2025-12', '2026-01']);
+  });
+
+  it('uses the Jakarta month, not the UTC month', () => {
+    // 2026-10-31 18:00 UTC = 2026-11-01 01:00 WIB
+    expect(lastMonths(2, new Date('2026-10-31T18:00:00Z'))).toEqual(['2026-10', '2026-11']);
+  });
+});
+
+describe('monthRange', () => {
+  it('returns the first and last calendar day of a month', () => {
+    expect(monthRange('2026-11')).toEqual({ from: '2026-11-01', to: '2026-11-30' });
+    expect(monthRange('2026-12')).toEqual({ from: '2026-12-01', to: '2026-12-31' });
+  });
+
+  it('handles February in common and leap years', () => {
+    expect(monthRange('2026-02').to).toBe('2026-02-28');
+    expect(monthRange('2028-02').to).toBe('2028-02-29');
   });
 });

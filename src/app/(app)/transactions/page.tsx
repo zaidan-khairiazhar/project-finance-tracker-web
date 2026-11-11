@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Dialog } from "@/components/ui/dialog";
 import { PageHeader } from "@/components/ui/page-header";
 import { useCreateTransaction, useUpdateTransaction, type Transaction, type TransactionFilters as Filters } from "@/features/transactions/api";
+import { ExportButton } from "@/features/transactions/ExportButton";
 import { TransactionFilters } from "@/features/transactions/TransactionFilters";
 import { TransactionForm } from "@/features/transactions/TransactionForm";
 import { TransactionTable } from "@/features/transactions/TransactionTable";
@@ -38,7 +39,8 @@ export default function TransactionsPage() {
         title="Transaksi"
         description="Semua pemasukan, pengeluaran, dan transfer."
         action={
-          <div className="flex gap-2">
+          <div className="flex items-start gap-2">
+            <ExportButton filters={filters} />
             <Button variant="outline" onClick={() => setTransferOpen(true)}>
               Transfer
             </Button>

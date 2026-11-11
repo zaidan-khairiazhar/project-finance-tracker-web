@@ -82,3 +82,18 @@ export function shiftMonth(month: string, delta: number): string {
 export function formatMonth(month: string): string {
   return new Intl.DateTimeFormat('id-ID', { month: 'long', year: 'numeric', timeZone: 'UTC' }).format(new Date(`${month}-01T00:00:00Z`));
 }
+
+/** `count` bulan `YYYY-MM` terakhir, urut naik, berakhir di bulan berjalan Jakarta. */
+export function lastMonths(count: number, now: Date = new Date()): string[] {
+  const current = currentMonth(now);
+
+  return Array.from({ length: count }, (_, i) => shiftMonth(current, i - (count - 1)));
+}
+
+/** Hari pertama dan terakhir bulan `YYYY-MM` sebagai tanggal `YYYY-MM-DD`. */
+export function monthRange(month: string): { from: string; to: string } {
+  const [year, m] = month.split('-').map(Number);
+  const lastDay = new Date(Date.UTC(year, m, 0)).getUTCDate();
+
+  return { from: `${month}-01`, to: `${month}-${String(lastDay).padStart(2, '0')}` };
+}

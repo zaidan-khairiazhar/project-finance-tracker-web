@@ -1,5 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { api } from "@/lib/api";
+import { invalidateKeys } from "@/lib/invalidate";
 import type { WalletType, WalletValues } from "./schema";
 
 export type Wallet = {
@@ -20,7 +21,8 @@ export function useWallets() {
 
 function useInvalidate() {
   const queryClient = useQueryClient();
-  return () => queryClient.invalidateQueries({ queryKey: KEY });
+  // Saldo awal dan arsip dompet mengubah total saldo dashboard dan laporan dompet.
+  return () => invalidateKeys(queryClient, ["wallets", "dashboard", "reports"]);
 }
 
 export function useCreateWallet() {

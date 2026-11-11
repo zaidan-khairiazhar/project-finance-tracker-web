@@ -1,5 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { api } from "@/lib/api";
+import { invalidateKeys } from "@/lib/invalidate";
 import type { CategoryType, CategoryValues } from "./schema";
 
 export type Category = {
@@ -22,8 +23,9 @@ export function useCategories(type?: CategoryType) {
 
 function useInvalidate() {
   const queryClient = useQueryClient();
-  // Prefiks ["categories"] mengenai semua varian (semua / income / expense).
-  return () => queryClient.invalidateQueries({ queryKey: KEY });
+  // Prefiks ["categories"] mengenai semua varian (semua / income / expense). Nama dan penghapusan
+  // kategori juga tampil di anggaran dan laporan.
+  return () => invalidateKeys(queryClient, ["categories", "budgets", "reports"]);
 }
 
 export function useCreateCategory() {

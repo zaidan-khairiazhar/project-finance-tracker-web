@@ -21,3 +21,20 @@ export function stubFetch(...responses: Response[]) {
   vi.stubGlobal('fetch', mock);
   return mock;
 }
+
+/**
+ * Stub fetch berdasarkan awalan URL (yang paling spesifik/terpanjang menang). Handler menerima init
+ * permintaan sehingga test dapat memeriksa method dan body. URL tak dikenal melempar error.
+ */
+export function routeFetch(handlers: Record<string, (init: RequestInit) => Response>) {
+  const keys = Object.keys(handlers).sort((a, b) => b.length - a.length);
+  const mock = vi.fn(async (url: string, init: RequestInit = {}) => {
+    const key = keys.find((k) => String(url).startsWith(k));
+    if (!key) throw new Error(`unexpected fetch ${url}`);
+    return handlers[key](init);
+  });
+  vi.stubGlobal('fetch', mock);
+  return mock;
+}
+
+export const fetchedUrls = (mock: { mock: { calls: unknown[][] } }) => mock.mock.calls.map(([u]) => String(u));

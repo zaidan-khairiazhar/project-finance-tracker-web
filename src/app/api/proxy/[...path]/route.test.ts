@@ -71,4 +71,31 @@ describe('/api/proxy', () => {
     expect(res.status).toBe(404);
     expect(fetchMock).not.toHaveBeenCalled();
   });
+
+  it('passes a CSV download through with its headers and the UTF-8 BOM intact', async () => {
+    const bytes = new Uint8Array([0xef, 0xbb, 0xbf, ...new TextEncoder().encode('Tanggal,Catatan\n2026-11-01,Kopi\n')]);
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockResolvedValue(
+        new Response(bytes, {
+          status: 200,
+          headers: { 'Content-Type': 'text/csv; charset=UTF-8', 'Content-Disposition': 'attachment; filename="transaksi-20261111.csv"' },
+        }),
+      ),
+    );
+
+    const res = await GET(withCookie('http://t/api/proxy/transactions/export'), ctx('transactions', 'export'));
+
+    expect(res.headers.get('content-type')).toBe('text/csv; charset=UTF-8');
+    expect(res.headers.get('content-disposition')).toBe('attachment; filename="transaksi-20261111.csv"');
+    expect(new Uint8Array(await res.arrayBuffer())).toEqual(bytes);
+  });
+
+  it('adds no Content-Disposition to ordinary JSON responses', async () => {
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(new Response('{"data":[]}', { status: 200, headers: { 'Content-Type': 'application/json' } })));
+
+    const res = await GET(withCookie('http://t/api/proxy/wallets'), ctx('wallets'));
+
+    expect(res.headers.get('content-disposition')).toBeNull();
+  });
 });

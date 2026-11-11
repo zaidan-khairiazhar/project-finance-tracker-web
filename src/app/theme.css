@@ -26,6 +26,7 @@
   --ring: #0f766e;
   --income: #15803d;
   --expense: #b42318;
+  --warning: #b45309;
   --radius: 0.75rem;
 }
 
@@ -51,6 +52,7 @@
     --ring: #2dd4bf;
     --income: #4ade80;
     --expense: #f97066;
+    --warning: #fbbf24;
   }
 }
 
@@ -71,6 +73,7 @@
   --color-accent: var(--accent);
   --color-accent-foreground: var(--accent-foreground);
   --color-destructive: var(--destructive);
+  --color-warning: var(--warning);
   --color-border: var(--border);
   --color-input: var(--input);
   --color-ring: var(--ring);

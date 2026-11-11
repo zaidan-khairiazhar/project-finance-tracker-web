@@ -1,5 +1,7 @@
 import { useInfiniteQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { api } from "@/lib/api";
+import { invalidateKeys } from "@/lib/invalidate";
+import { api, ApiError } from "@/lib/api";
+import { filenameFromDisposition } from "@/lib/download";
 import type { TransactionValues } from "./schema";
 
 export type TransactionType = "income" | "expense" | "transfer_out" | "transfer_in";
@@ -48,11 +50,10 @@ export function useTransactions(filters: TransactionFilters) {
   });
 }
 
-/** Transaksi mengubah saldo dompet dan angka dashboard, jadi ketiganya disegarkan. */
+/** Transaksi mengubah saldo dompet, dashboard, progres anggaran, dan laporan, jadi semuanya disegarkan. */
 function useInvalidateMoney() {
   const queryClient = useQueryClient();
-  return () =>
-    Promise.all(["transactions", "wallets", "dashboard"].map((key) => queryClient.invalidateQueries({ queryKey: [key] })));
+  return () => invalidateKeys(queryClient, ["transactions", "wallets", "dashboard", "budgets", "reports"]);
 }
 
 export function useCreateTransaction() {
@@ -104,4 +105,18 @@ export function useDeleteTransfer() {
     mutationFn: (groupId: string) => api<undefined>(`transfers/${groupId}`, { method: "DELETE" }),
     onSuccess: invalidate,
   });
+}
+
+/** Unduh transaksi sesuai filter sebagai CSV (tanpa paginasi). Melempar ApiError jika ditolak server. */
+export async function exportTransactions(filters: TransactionFilters): Promise<{ blob: Blob; filename: string }> {
+  const res = await fetch(`/api/proxy/transactions/export${toQuery({ ...filters, per_page: undefined })}`, { headers: { Accept: "text/csv" } });
+
+  if (!res.ok) {
+    // eslint-disable-next-line @next/next/no-location-assign-relative-destination
+    if (res.status === 401 && typeof location !== "undefined" && location.pathname !== "/login") location.assign("/login");
+    const body = await res.json().catch(() => undefined);
+    throw new ApiError(body?.message ?? "Gagal mengekspor. Coba lagi.", res.status, body?.errors);
+  }
+
+  return { blob: await res.blob(), filename: filenameFromDisposition(res.headers.get("content-disposition")) ?? "transaksi.csv" };
 }
