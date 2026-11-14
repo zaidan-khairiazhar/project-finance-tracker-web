@@ -20,6 +20,15 @@ describe('AppShell', () => {
     }
   });
 
+  it('links to recurring transactions and has 7 links in each navigation', () => {
+    renderWithClient(<AppShell>isi</AppShell>);
+
+    for (const nav of screen.getAllByRole('navigation', { name: 'Navigasi utama' })) {
+      expect(within(nav).getByRole('link', { name: 'Berulang' })).toHaveAttribute('href', '/recurring');
+      expect(within(nav).getAllByRole('link')).toHaveLength(7);
+    }
+  });
+
   it('marks the current page', () => {
     renderWithClient(<AppShell>isi</AppShell>);
 

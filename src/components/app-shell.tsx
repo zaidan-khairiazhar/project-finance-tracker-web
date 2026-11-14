@@ -11,6 +11,7 @@ const icons: Record<string, string> = {
   categories: "M3 12V4h8l10 10-8 8L3 12Zm5-5h.01",
   budgets: "M21 12A9 9 0 1 1 12 3v9h9Z",
   reports: "M5 21V10M12 21V4M19 21v-7",
+  recurring: "M17 2l4 4-4 4M3 11V9a3 3 0 0 1 3-3h15M7 22l-4-4 4-4M21 13v2a3 3 0 0 1-3 3H3",
 };
 
 const NAV = [
@@ -20,6 +21,7 @@ const NAV = [
   { href: "/categories", label: "Kategori", icon: "categories" },
   { href: "/budgets", label: "Anggaran", icon: "budgets" },
   { href: "/reports", label: "Laporan", icon: "reports" },
+  { href: "/recurring", label: "Berulang", icon: "recurring" },
 ];
 
 function Icon({ name }: { name: string }) {
@@ -76,13 +78,13 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       </div>
 
       {/* Mobile: navigasi bawah */}
-      <nav aria-label="Navigasi utama" className="fixed inset-x-0 bottom-0 z-10 grid grid-cols-6 border-t border-border bg-card md:hidden">
+      <nav aria-label="Navigasi utama" className="fixed inset-x-0 bottom-0 z-10 flex overflow-x-auto border-t border-border bg-card md:hidden">
         {NAV.map((item) => (
           <Link
             key={item.href}
             href={item.href}
             aria-current={isActive(item.href) ? "page" : undefined}
-            className="flex flex-col items-center gap-1 py-2.5 text-[11px] font-medium text-muted-foreground aria-[current=page]:text-primary"
+            className="flex min-w-[4.5rem] flex-1 flex-col items-center gap-1 py-2.5 text-[11px] font-medium text-muted-foreground aria-[current=page]:text-primary"
           >
             <Icon name={item.icon} />
             {item.label}

@@ -133,6 +133,12 @@ export function TransactionTable({ filters, onEdit }: Props) {
                     <p className={`font-medium ${!transfer && !t.category_id ? "text-muted-foreground" : ""}`}>{title}</p>
                     <p className="mt-0.5 text-xs text-muted-foreground">
                       <span>{walletName(t.wallet_id)}</span>
+                      {t.recurring_rule_id && (
+                        <>
+                          {" · "}
+                          <span className="rounded border border-border px-1 py-px text-[11px] font-medium text-foreground/80">Otomatis</span>
+                        </>
+                      )}
                       {t.note && (
                         <>
                           {" · "}

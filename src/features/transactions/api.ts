@@ -15,6 +15,7 @@ export type Transaction = {
   occurred_at: string;
   note: string | null;
   transfer_group_id: string | null;
+  recurring_rule_id: string | null;
 };
 
 export type TransactionFilters = {
