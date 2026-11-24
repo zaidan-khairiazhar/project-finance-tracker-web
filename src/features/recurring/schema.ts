@@ -19,7 +19,7 @@ export function minStartDate(now: Date = new Date()): string {
   return d.toISOString().slice(0, 10);
 }
 
-const amount = z
+export const amount = z
   .string()
   .trim()
   .transform((value, ctx) => {

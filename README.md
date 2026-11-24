@@ -17,6 +17,8 @@ npm run dev                         # http://localhost:3000
 - Auth, dompet, kategori, transaksi (filter + paginasi), transfer antar dompet, dashboard bulanan.
 - **Anggaran** (`/budgets`): batas pengeluaran bulanan per kategori dengan status ok / hampir habis / melebihi.
 - **Laporan** (`/reports`, tab lewat `?tab=`): **Tren** (pemasukan vs pengeluaran 6/12 bulan), **Kategori** (perbandingan antar bulan, 3-12 bulan), **Dompet** (arus dan saldo akhir pada rentang tanggal).
+- **Target tabungan** (`/goals`): target dengan nominal dan tenggat opsional, terhubung ke satu dompet. Progres dihitung dari saldo dompet itu (bukan setoran terpisah), lengkap dengan status Berjalan / Tercapai / Lewat tenggat dan "perlu Rp X per bulan". Satu dompet hanya untuk satu target.
+- **Transaksi berulang** (`/recurring`): aturan harian / mingguan / bulanan untuk pemasukan atau pengeluaran. Transaksi dibuat otomatis (termasuk yang terlewat, dengan tanggal yang benar) dan ditandai **Otomatis** di daftar transaksi. Aturan bisa dijeda, diaktifkan lagi, diubah, dihapus, atau dijalankan manual lewat **Jalankan sekarang**. Aturan yang dompet atau kategorinya tidak valid lagi dijeda otomatis beserta alasannya.
 - **Ekspor CSV** dari halaman Transaksi, mengikuti filter yang aktif (UTF-8 dengan BOM, terbaca di Excel).
 
 Grafik mengikuti aturan dataviz: ada legenda, tabel pendamping, dan status dinyatakan dengan teks (bukan warna saja). Palet grafik tren (biru + oranye) divalidasi dengan `validate_palette.js` untuk mode terang dan gelap.

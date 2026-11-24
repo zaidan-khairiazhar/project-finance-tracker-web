@@ -54,7 +54,7 @@ export function useTransactions(filters: TransactionFilters) {
 /** Transaksi mengubah saldo dompet, dashboard, progres anggaran, dan laporan, jadi semuanya disegarkan. */
 function useInvalidateMoney() {
   const queryClient = useQueryClient();
-  return () => invalidateKeys(queryClient, ["transactions", "wallets", "dashboard", "budgets", "reports"]);
+  return () => invalidateKeys(queryClient, ["transactions", "wallets", "dashboard", "budgets", "reports", "goals"]);
 }
 
 export function useCreateTransaction() {

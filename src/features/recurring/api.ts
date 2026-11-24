@@ -44,7 +44,7 @@ export function useRecurringRules() {
 /** Jadwal menghasilkan transaksi, jadi semua yang bergantung pada transaksi ikut disegarkan. */
 function useInvalidateRecurring() {
   const queryClient = useQueryClient();
-  return () => invalidateKeys(queryClient, ["recurring", "transactions", "wallets", "dashboard", "budgets", "reports"]);
+  return () => invalidateKeys(queryClient, ["recurring", "transactions", "wallets", "dashboard", "budgets", "reports", "goals"]);
 }
 
 export function useCreateRecurringRule() {

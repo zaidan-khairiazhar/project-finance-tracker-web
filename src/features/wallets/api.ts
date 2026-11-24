@@ -22,7 +22,7 @@ export function useWallets() {
 function useInvalidate() {
   const queryClient = useQueryClient();
   // Saldo awal dan arsip dompet mengubah total saldo dashboard dan laporan dompet.
-  return () => invalidateKeys(queryClient, ["wallets", "dashboard", "reports"]);
+  return () => invalidateKeys(queryClient, ["wallets", "dashboard", "reports", "goals"]);
 }
 
 export function useCreateWallet() {

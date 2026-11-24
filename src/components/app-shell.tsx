@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useEffect, useRef } from "react";
 import { LogoutButton } from "./logout-button";
 
 const icons: Record<string, string> = {
@@ -12,6 +13,7 @@ const icons: Record<string, string> = {
   budgets: "M21 12A9 9 0 1 1 12 3v9h9Z",
   reports: "M5 21V10M12 21V4M19 21v-7",
   recurring: "M17 2l4 4-4 4M3 11V9a3 3 0 0 1 3-3h15M7 22l-4-4 4-4M21 13v2a3 3 0 0 1-3 3H3",
+  goals: "M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18Zm0-5a4 4 0 1 0 0-8 4 4 0 0 0 0 8Zm0-3a1 1 0 1 0 0-2 1 1 0 0 0 0 2Z",
 };
 
 const NAV = [
@@ -22,6 +24,7 @@ const NAV = [
   { href: "/budgets", label: "Anggaran", icon: "budgets" },
   { href: "/reports", label: "Laporan", icon: "reports" },
   { href: "/recurring", label: "Berulang", icon: "recurring" },
+  { href: "/goals", label: "Target", icon: "goals" },
 ];
 
 function Icon({ name }: { name: string }) {
@@ -44,6 +47,12 @@ function Brand() {
 export function AppShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const isActive = (href: string) => pathname === href || pathname.startsWith(`${href}/`);
+  const mobileNav = useRef<HTMLElement>(null);
+
+  // Nav mobile bisa digulir mendatar; bawa item aktif ke tengah (scrollIntoView tidak ada di jsdom).
+  useEffect(() => {
+    mobileNav.current?.querySelector('[aria-current="page"]')?.scrollIntoView?.({ inline: "center", block: "nearest" });
+  }, [pathname]);
 
   return (
     <div className="flex min-h-screen flex-1">
@@ -78,7 +87,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       </div>
 
       {/* Mobile: navigasi bawah */}
-      <nav aria-label="Navigasi utama" className="fixed inset-x-0 bottom-0 z-10 flex overflow-x-auto border-t border-border bg-card md:hidden">
+      <nav ref={mobileNav} aria-label="Navigasi utama" className="fixed inset-x-0 bottom-0 z-10 flex overflow-x-auto border-t border-border bg-card md:hidden">
         {NAV.map((item) => (
           <Link
             key={item.href}
