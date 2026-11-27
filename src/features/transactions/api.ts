@@ -16,6 +16,7 @@ export type Transaction = {
   note: string | null;
   transfer_group_id: string | null;
   recurring_rule_id: string | null;
+  has_receipt: boolean;
 };
 
 export type TransactionFilters = {

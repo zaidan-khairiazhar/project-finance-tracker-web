@@ -4,6 +4,9 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Dialog } from "@/components/ui/dialog";
 import { PageHeader } from "@/components/ui/page-header";
+import { ReceiptScanFlow } from "@/features/receipts/ReceiptScanFlow";
+import { ReceiptSection } from "@/features/receipts/ReceiptSection";
+import { ReceiptViewerDialog } from "@/features/receipts/ReceiptViewerDialog";
 import { useCreateTransaction, useUpdateTransaction, type Transaction, type TransactionFilters as Filters } from "@/features/transactions/api";
 import { ExportButton } from "@/features/transactions/ExportButton";
 import { TransactionFilters } from "@/features/transactions/TransactionFilters";
@@ -28,6 +31,7 @@ export default function TransactionsPage() {
   const [filters, setFilters] = useState<Filters>({});
   // undefined = tertutup, null = tambah, Transaction = ubah
   const [editing, setEditing] = useState<Transaction | null | undefined>(undefined);
+  const [viewing, setViewing] = useState<Transaction | null>(null);
   const [transferOpen, setTransferOpen] = useState(false);
   const create = useCreateTransaction();
   const update = useUpdateTransaction();
@@ -44,12 +48,13 @@ export default function TransactionsPage() {
             <Button variant="outline" onClick={() => setTransferOpen(true)}>
               Transfer
             </Button>
+            <ReceiptScanFlow />
             <Button onClick={() => setEditing(null)}>Tambah transaksi</Button>
           </div>
         }
       />
       <TransactionFilters value={filters} onChange={setFilters} />
-      <TransactionTable filters={filters} onEdit={setEditing} />
+      <TransactionTable filters={filters} onEdit={setEditing} onViewReceipt={setViewing} />
 
       <Dialog open={editing !== undefined} onClose={close} title={editing ? "Ubah transaksi" : "Tambah transaksi"}>
         <TransactionForm
@@ -61,7 +66,9 @@ export default function TransactionsPage() {
             close();
           }}
         />
+        {editing && (editing.type === "income" || editing.type === "expense") && <ReceiptSection key={editing.id} transaction={editing} />}
       </Dialog>
+      <ReceiptViewerDialog transaction={viewing} onClose={() => setViewing(null)} />
       <TransferDialog open={transferOpen} onClose={() => setTransferOpen(false)} />
     </>
   );

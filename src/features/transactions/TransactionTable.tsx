@@ -24,9 +24,15 @@ const AMOUNT_COLOR: Record<Transaction["type"], string> = {
   transfer_out: "text-muted-foreground",
 };
 
-type Props = { filters: TransactionFilters; onEdit: (transaction: Transaction) => void };
+const PaperclipIcon = () => (
+  <svg aria-hidden="true" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <path d="m21.44 11.05-9.19 9.19a6 6 0 0 1-8.49-8.49l8.57-8.57A4 4 0 1 1 18 8.84l-8.59 8.57a2 2 0 0 1-2.83-2.83l8.49-8.48" />
+  </svg>
+);
 
-export function TransactionTable({ filters, onEdit }: Props) {
+type Props = { filters: TransactionFilters; onEdit: (transaction: Transaction) => void; onViewReceipt?: (transaction: Transaction) => void };
+
+export function TransactionTable({ filters, onEdit, onViewReceipt }: Props) {
   const { data, isPending, error, refetch, fetchNextPage, hasNextPage, isFetchingNextPage } = useTransactions(filters);
   const { data: wallets = [] } = useWallets();
   const { data: categories = [] } = useCategories();
@@ -152,6 +158,11 @@ export function TransactionTable({ filters, onEdit }: Props) {
                     {formatRupiah(t.amount)}
                   </td>
                   <td className="whitespace-nowrap px-4 py-2 text-right align-top">
+                    {t.has_receipt && (
+                      <Button variant="ghost" size="sm" aria-label={`Lihat struk ${t.note || "transaksi"}`} onClick={() => onViewReceipt?.(t)}>
+                        <PaperclipIcon />
+                      </Button>
+                    )}
                     {!transfer && (
                       <Button variant="ghost" size="sm" aria-label={`Ubah transaksi ${title}`} onClick={() => onEdit(t)}>
                         Ubah

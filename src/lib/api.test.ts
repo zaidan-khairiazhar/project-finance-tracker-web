@@ -28,6 +28,28 @@ describe('api', () => {
     expect(new Headers(init.headers).get('Content-Type')).toBe('application/json');
   });
 
+  it('leaves Content-Type unset for FormData so the browser adds the boundary', async () => {
+    const fetchMock = vi.fn().mockResolvedValue(respond(200, { data: {} }));
+    vi.stubGlobal('fetch', fetchMock);
+    const form = new FormData();
+    form.append('image', new Blob([new Uint8Array([1, 2])]), 'r.jpg');
+
+    await api('receipts/scan', { method: 'POST', body: form });
+
+    const init = fetchMock.mock.calls[0][1] as RequestInit;
+    expect(new Headers(init.headers).has('Content-Type')).toBe(false);
+    expect(init.body).toBe(form);
+  });
+
+  it('lets a caller-provided Content-Type win', async () => {
+    const fetchMock = vi.fn().mockResolvedValue(respond(200, {}));
+    vi.stubGlobal('fetch', fetchMock);
+
+    await api('x', { method: 'POST', body: 'a', headers: { 'Content-Type': 'text/plain' } });
+
+    expect(new Headers((fetchMock.mock.calls[0][1] as RequestInit).headers).get('Content-Type')).toBe('text/plain');
+  });
+
   it('returns undefined for 204', async () => {
     vi.stubGlobal('fetch', vi.fn().mockResolvedValue(new Response(null, { status: 204 })));
 

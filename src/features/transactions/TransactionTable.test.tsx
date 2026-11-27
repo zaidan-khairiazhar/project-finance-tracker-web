@@ -8,7 +8,7 @@ const wallets = { data: [{ id: 'w1', name: 'BCA' }, { id: 'w2', name: 'Tunai' }]
 const cats = { data: [{ id: 'c1', parent_id: null, name: 'Makanan', type: 'expense', icon: null, color: null }] };
 const tx = (over = {}) => ({
   id: 't1', wallet_id: 'w1', category_id: 'c1', type: 'expense', amount: 25000,
-  occurred_at: '2026-11-07T16:30:00Z', note: 'kopi susu', transfer_group_id: null, ...over,
+  occurred_at: '2026-11-07T16:30:00Z', note: 'kopi susu', transfer_group_id: null, recurring_rule_id: null, has_receipt: false, ...over,
 });
 
 /** fetch yang menjawab per URL, dan mencatat panggilannya. */
@@ -157,5 +157,23 @@ describe('TransactionTable', () => {
     await user.click(await screen.findByRole('button', { name: /^Hapus/ }));
 
     expect(await screen.findByRole('alert')).toHaveTextContent('Dompet sudah diarsipkan.');
+  });
+});
+
+describe('TransactionTable struk', () => {
+  it('menampilkan tombol "Lihat struk" hanya pada baris has_receipt dan memanggil onViewReceipt', async () => {
+    const user = userEvent.setup();
+    route({
+      ...base,
+      '/api/proxy/transactions': () =>
+        jsonResponse(200, { data: [tx({ id: 't1', note: 'kopi susu', has_receipt: true }), tx({ id: 't2', note: 'bensin' })], meta: { next_cursor: null } }),
+    });
+    const onViewReceipt = vi.fn();
+    renderWithClient(<TransactionTable filters={{}} onEdit={vi.fn()} onViewReceipt={onViewReceipt} />);
+
+    await screen.findByText('bensin');
+    expect(screen.getAllByRole('button', { name: /^Lihat struk/ })).toHaveLength(1);
+    await user.click(screen.getByRole('button', { name: 'Lihat struk kopi susu' }));
+    expect(onViewReceipt).toHaveBeenCalledWith(expect.objectContaining({ id: 't1' }));
   });
 });

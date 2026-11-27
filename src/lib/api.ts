@@ -27,7 +27,8 @@ async function readJson(res: Response): Promise<ErrorBody | undefined> {
 export async function api<T>(path: string, init: RequestInit = {}): Promise<T> {
   const headers = new Headers(init.headers);
   headers.set('Accept', 'application/json');
-  if (init.body && !headers.has('Content-Type')) headers.set('Content-Type', 'application/json');
+  // FormData: biarkan browser mengisi Content-Type multipart beserta boundary-nya.
+  if (init.body && !(init.body instanceof FormData) && !headers.has('Content-Type')) headers.set('Content-Type', 'application/json');
 
   const res = await fetch(`/api/proxy/${path}`, { ...init, headers });
 

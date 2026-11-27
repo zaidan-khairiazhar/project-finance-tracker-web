@@ -22,7 +22,9 @@ async function handler(request: Request, { params }: Context): Promise<NextRespo
 
   const search = new URL(request.url).search;
   const hasBody = !['GET', 'HEAD'].includes(request.method);
-  const body = hasBody ? await request.text() : '';
+  // Byte mentah (bukan text()) supaya unggahan multipart/biner sampai utuh ke upstream.
+  const raw = hasBody ? await request.arrayBuffer() : null;
+  const body = raw && raw.byteLength > 0 ? raw : undefined;
 
   const headers = new Headers({ Accept: 'application/json', Authorization: `Bearer ${token}` });
   if (body) headers.set('Content-Type', request.headers.get('content-type') ?? 'application/json');
@@ -32,7 +34,7 @@ async function handler(request: Request, { params }: Context): Promise<NextRespo
     upstream = await fetch(`${apiBaseUrl()}/${path.map(encodeURIComponent).join('/')}${search}`, {
       method: request.method,
       headers,
-      body: body || undefined,
+      body,
       cache: 'no-store',
       redirect: 'manual',
     });
@@ -44,10 +46,12 @@ async function handler(request: Request, { params }: Context): Promise<NextRespo
     return new NextResponse(null, { status: upstream.status });
   }
 
-  // Byte mentah (bukan text()) supaya BOM UTF-8 pada CSV tidak terbuang; Content-Disposition dibawa untuk nama berkas unduhan.
+  // Byte mentah (bukan text()) supaya BOM UTF-8 pada CSV tidak terbuang; Content-Disposition dibawa untuk nama berkas unduhan, Cache-Control untuk kebijakan cache upstream.
   const responseHeaders: Record<string, string> = { 'Content-Type': upstream.headers.get('content-type') ?? 'application/json' };
   const disposition = upstream.headers.get('content-disposition');
   if (disposition) responseHeaders['Content-Disposition'] = disposition;
+  const cacheControl = upstream.headers.get('cache-control');
+  if (cacheControl) responseHeaders['Cache-Control'] = cacheControl;
 
   const res = new NextResponse(await upstream.arrayBuffer(), { status: upstream.status, headers: responseHeaders });
   if (upstream.status === 401) clearToken(res);
